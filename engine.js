@@ -171,7 +171,7 @@
                                 /* FIXME: I have assumed Kurt should only be in if he has vetoed a destination */
                             },
                         has_vetoed: function(destination) {
-                            if (!destination) {
+                            if (!destination || draw.actor_by_id['hel'].hell_on_earth == this.id) {
                                 return false;
                             }
                             if (this.is_bummed()) {
@@ -274,7 +274,7 @@
             new Actor(draw,
                     {   id:                 'reardon',
                         name:               'Reardon',
-                        winner:             (TEST && 'RW' ) || '',
+                        winner:           (TEST && 'RW' ) || '',
                         destination:        (TEST && 'Barcelona') || '',
                         runner_up:          (TEST && 'MT' ) || '',
                         helpimede:          (TEST && 'Vienna') || '',
@@ -351,6 +351,24 @@
                         name:               'Piparus'
                     }),
             new Actor(draw,
+                    {   id:                 'gibbon',
+                        name:               'Pete Gibbon',
+                        round:              '',
+                        needs_delegate:     true,
+                        is_hellable:        true,
+                        get_destination:    function() {
+                            return ((
+                                    (this.round == 'kurt' && draw.actor_by_id['kurt'].vetoed_destinations().length >= 1
+                                                         && draw.actor_by_id['hel'].hell_on_earth != 'kurt') ||
+                                    (this.round == 'shaft' && draw.actor_by_id['shaft'].shaftee
+                                                         && !draw.actor_by_id['shaft'].destination
+                                                         && draw.actor_by_id['hel'].hell_on_earth != 'shaft') ||
+                                    (this.round == 'grosser' && draw.actor_by_id['grosser'].grosseree
+                                                         && draw.actor_by_id['hel'].hell_on_earth != 'grosser')
+                                   ) && this.get_original_destination()) || '';
+                        }
+                    }),
+            new Actor(draw,
                     {   id:                 'thorsten',
                         name:               'Thorsten',
                         needs_delegate:     true
@@ -388,6 +406,11 @@
                 }),
 
             new Phase(draw,
+                {   id:             "ENVELOPE",
+                    actor:          draw.actor_by_id['gibbon']
+                }),
+
+            new Phase(draw,
                 {   id:             "PCB_LIST"
                 }),
 
@@ -407,6 +430,18 @@
                     actor:          draw.actor_by_id['hel']
                 }),
 
+            new Phase(draw,
+                {   id:             "SCHWEINE",
+                    actor:          draw.actor_by_id['gibbon']
+                    /* doesn't depend on envelope as we do it anyway */
+                }),
+
+            new Phase(draw,
+                {   id:             "APPLY_PG",
+                    depends:        ["SCHWEINE","ENVELOPE"],
+                    actor:          draw.actor_by_id['gibbon']
+                }),
+            
             new Phase(draw,
                 {   id:             "FINAL_NT",
                 }),
@@ -440,7 +475,7 @@
 
             new Phase(draw,
                 {   id:             "KURT",
-                    depends:        ["REVEAL","MASC_ASS","LLL","GLOGG", "BARNEY"],
+                    depends:        ["REVEAL","MASC_ASS","LLL","GLOGG", "BARNEY", "APPLY_PG"],
                     actor:          draw.actor_by_id['kurt']
                 }),
 
