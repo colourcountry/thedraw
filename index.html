@@ -1,0 +1,696 @@
+<html ng-app="draw">
+<head>
+    <title>Colonel's draw simulator</title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!--script type="text/javascript" src="angular.js"></script-->
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.28/angular.min.js"></script>
+    <script type="text/javascript" src="engine.js"></script>
+
+    <style type="text/css">
+body            {   background-color: #333;
+                    color: white;
+                    font-family: sans-serif;
+                    line-height: 16pt;
+                    margin: 0;
+                }
+
+h1              {   background-color: #c04;
+                    padding: 0.5em;
+                    line-height: 36pt;
+                } 
+
+div.columns     {
+                 -webkit-column-width: 25em;
+                    -moz-column-width: 25em;
+                         column-width: 25em;
+                    padding: 1em;
+                }
+
+div.phase       {
+                    display: inline-block;
+                    width: 100%;
+                }
+
+div.phase p     {   margin: 0.5em; }
+
+div.phase button {  padding: 0.5em; }
+
+div.phase select, div.phase option, div.phase input {  padding: 0.3em; 
+                    font-weight: bold;
+                }
+
+div.phase h2    {
+                    margin: 0;
+                    padding: 0.3em;
+                    font-size: 18pt;
+                    line-height: 24pt;
+                }
+
+div.phase.ready h2 {   
+                    background-color: black;
+                    font-size: 24pt;
+                }
+
+div.phase       {   background-color: #555;
+                    border: 0.3em solid #333;
+                    padding: 0;
+                }
+
+div.phase.ready {   background-color: #080;
+                    border: 0.3em solid black;
+                }
+    </style>
+</head>
+<body ng-controller="DrawController as draw">
+    <h1>The draw</h1>
+    <div class="columns">
+        <div ng-repeat="phase in draw.phases" ng-class="['phase',phase.status == 'ready' && 'ready', phase.status == 'done' && 'done']">
+            <div ng-if="phase.id == 'REARDON'">
+                <h2>Reardon's tournament</h2>
+                <div ng-if="phase.status == 'ready'">
+                    <p>TODO</p>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <table>
+                        <tr>
+                            <td>
+                                <select ng-model="phase.actor.winner"
+                                        ng-options="actor.id as actor.name for actor in draw.human_actors">
+                                </select> won and chose
+                            </td>
+                            <td>
+                                <input ng-model="phase.actor.destination"></input>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <select ng-model="phase.actor.runner_up"
+                                        ng-options="actor.id as actor.name for actor in draw.human_actors">
+                                </select> was runner-up and chose
+                            </td>
+                            <td>
+                                <input ng-model="phase.actor.helpimede"></input>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div ng-if="phase.id == 'PCB_LIST'">
+                <h2>Reveal mentalist destinations</h2>
+                <div ng-if="phase.status == 'ready'">
+                    <p>Members of the Regiment reveal their mentalist destinations.</p>
+                    <p>This is normally done on the first night. Members not in attendance at this time
+                       forfeit their mentalist destination.</p>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <table>
+                        <tr ng-repeat="actor in draw.actors" ng-if="actor.is_human">
+                            <td>
+                                {{actor.name}} chose
+                            </td>
+                            <td>
+                                <input ng-model="actor.mentalist"></input>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div ng-if="phase.id == 'PIPARUS'">
+                <h2>Piparus's retrospective draw</h2>
+                <div ng-if="phase.status == 'ready'">
+                    <p>Each of the Colonel's men writes down, on a piece of paper, a destination previously visited on a Colonel's 
+break. The destinations are then placed into a hat and eliminated one by one (in reverse order of revealing of destinations on the 
+mentalist list). The destination left in the hat is then added at the bottom of the mentalist list as Piparus' choice.</p>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <p>Piparus chose
+                       <input ng-model="phase.actor.mentalist"></input>
+                    </p>
+                </div>
+            </div>
+            <div ng-if="phase.id == 'MENTALIST'">
+                <h2>Mentalist's choice</h2>
+                <div ng-if="phase.status == 'ready'">
+                    <p>An innocent member of the public is coerced to choose a destination from the mentalist list.</p>
+                    <ul>
+                        <li ng-repeat="actor in draw.actors" ng-if="actor.get_mentalist()">
+                            {{actor.get_mentalist()}} ({{actor.name}})
+                        </li>
+                    </ul>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <p>P.C. Bourne's choice is
+                        <select ng-model="phase.actor.destination"
+                                ng-options="destination for destination in draw.get_mentalists()">
+                        </select> 
+                    </p>
+                </div>
+            </div>
+            <div ng-if="phase.id == 'HEL_2006'">
+                <h2>Hel's choice</h2>
+                <div ng-if="phase.status == 'ready'">
+                    <p>Another innocent member of the public is adjured to choose a destination from the mentalist list.</p>
+                    <ul>
+                        <li ng-repeat="actor in draw.actors" ng-if="actor.get_mentalist()">
+                            {{actor.get_mentalist()}} ({{actor.name}})
+                        </li>
+                    </ul>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <p>Hel's choice is
+                        <select ng-model="phase.actor.in_hell"
+                                ng-options="destination for destination in draw.get_mentalists()">
+                        </select> 
+                    </p>
+                </div>
+            </div>
+            <div ng-if="phase.id == 'FINAL_NT'">
+                <h2>Final night</h2>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <ul>
+                        <li ng-repeat="actor in draw.actors" ng-if="actor.is_human">
+                            <input type="checkbox" ng-model="actor.is_attendee"></input> {{actor.name}}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div ng-if="phase.id == 'LLL'">
+                <h2>Leprechaun's choice</h2>
+                <div ng-if="phase.actor.id == draw.actor_by_id['hel'].hell_on_earth">
+                    <p><strong>This will not happen because Hel unleashed &lsquo;Hell on Earth&rsquo; on the Leprechaun. Ah, you fecker.</strong></p>
+                </div>
+                <div ng-if="phase.actor.id != draw.actor_by_id['hel'].hell_on_earth">
+                <div ng-if="phase.status == 'ready'">
+                    <p>The attendees discuss and agree on a destination for the Little Lucky Leprechaun to enter into the draw,
+                       given the destinations already revealed.
+                       The Little Lucky Leprechaun may choose a city, country or region. 
+                    </p>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <p>
+                        Seamus chose <input ng-model="phase.actor.destination"></input>
+                    </p>
+                </div>
+                </div>
+            </div>
+            <div ng-if="phase.id == 'KURT'">
+                <h2>Kurt's veto</h2>
+                <div ng-if="phase.actor.id == draw.actor_by_id['hel'].hell_on_earth">
+                    <p><strong>This will not happen because Hel unleashed &lsquo;Hell on Earth&rsquo; on Kurt.</strong></p>
+                </div>
+                <div ng-if="phase.actor.id != draw.actor_by_id['hel'].hell_on_earth">
+                <div ng-if="phase.status == 'ready'">
+                    <p>
+                        Each attendee receives a piece of paper and writes down a destination they wish to veto, or "No veto".
+                    </p>
+                    <p>
+                        <strong>{{draw.actor_by_id[draw.actor_by_id['thorsten'].delegate].name}}</strong>
+                        receives an extra piece of paper and writes down a destination for Thorsten to veto.
+                        Thorsten's veto must be exercised.
+                    </p>
+                    <p>
+                        The results are then revealed, and should any destination
+                        <strong ng-if="phase.actor.is_bummed()">be unanimously vetoed</strong>
+                        <strong ng-if="phase.actor.is_helped()">receive 2 or more veto votes</strong>
+                        <strong ng-if="!phase.actor.is_bummed() && !phase.actor.is_helped()">receive 3 or more veto votes</strong>
+                        it loses its place in the draw.
+                    </p>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <table>
+                        <tr ng-repeat="actor in draw.actors" ng-if="actor.is_attendee || actor.id == 'thorsten'">
+                            <td>
+                                {{actor.name}} vetoed
+                            </td>
+                            <td>
+                                <select ng-model="actor.veto"
+                                        ng-options="item for item in draw.actor_by_id['kurt'].unique_destinations()">
+                                    <option value="">Nothing</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                </div>
+            </div>
+            <div ng-if="phase.id == 'SHAFT'">
+                <h2>Shaft's shaft</h2>
+                <div ng-if="phase.actor.id == draw.actor_by_id['hel'].hell_on_earth">
+                    <p><strong>This will not happen because Hel unleashed &lsquo;Hell on Earth&rsquo; on Shaft.</strong></p>
+                </div>
+                <div ng-if="phase.actor.id != draw.actor_by_id['hel'].hell_on_earth">
+                <div ng-if="phase.status == 'ready'">
+                    <p>Prepare a hat containing:</p>
+                    <ul>
+                        <li>each absent Colonel's Man who submitted a destination:
+                            <strong ng-repeat="actor in draw.actors" ng-if="actor.is_human && actor.shaft_available() 
+                                        && (actor.id != draw.actor_by_id['hel'].hell_on_earth)">{{actor.name}} </strong>
+                        </li>
+                        <li>all mascots who have chosen destinations at this point:
+                            <strong ng-repeat="actor in draw.actors" ng-if="!actor.is_human && (actor.shaft_available() == 'normal')
+                                        && (actor.id != draw.actor_by_id['hel'].hell_on_earth)">{{actor.name}} </strong>
+                        </li>
+                        <li>Kurt, if he has vetoed a destination</li>
+                        <li>Gløgg, if he has bummed a mascot out of their destination
+                            <strong>(he has<span ng-hide="draw.actor_by_id['glogg'].shaft_available() == 'special-glogg'"> not</span>)</strong>
+                        </li>
+                        <li ng-if="phase.actor.is_bummed()">
+                            <strong>three times as many</strong> blank tiles as the total of the above,
+                            to give a <strong>one in four</strong> chance that a destination will be pulled out
+                        </li>
+                        <li ng-if="phase.actor.is_helped()">
+                            <strong>as many</strong> blank tiles as the total of the above,
+                            to give a <strong>one in two</strong> chance that a destination will be pulled out
+                        </li>
+                        <li ng-if="!phase.actor.is_bummed() && !phase.actor.is_helped()">
+                            <strong>twice as many</strong> blank tiles as the total of the above,
+                            to give a <strong>one in three</strong> chance that a destination will be pulled out
+                        </li>
+                    </ul>
+                    <p>If a man or mascot is pulled out, they are shafted and take no further part in the draw. </p>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <p>
+                        <select ng-model="phase.actor.shaftee"
+                                ng-options="actor.id as actor.name for actor in draw.get_shaft_available_actors()">
+                            <option value="">Nobody</option>
+                        </select> was shafted
+                    </p>
+                    <p ng-if="phase.actor.shaftee == 'kurt'">
+                        <select ng-model="phase.actor.destination"
+                                ng-options="veto for veto in draw.actor_by_id['kurt'].vetoed_destinations()">
+                        </select>
+                        was de-vetoed
+                    </p>
+                    <p ng-if="phase.actor.get_destination()">
+                        Shaft's choice is <strong>{{phase.actor.get_destination()}}</strong>
+                    </p>
+                </div>
+                </div>
+            </div>
+            <div ng-if="phase.id == 'GROSSER'">
+                <h2>Grosser Vass makes grosser</h2>
+                <div ng-if="phase.actor.id == draw.actor_by_id['hel'].hell_on_earth">
+                    <p><strong>This will not happen because Hel unleashed &lsquo;Hell on Earth&rsquo; on Grosser Vass.</strong></p>
+                </div>
+                <div ng-if="phase.actor.id != draw.actor_by_id['hel'].hell_on_earth">
+                <div ng-if="phase.status == 'ready'">
+                    <p>Prepare a hat containing:</p>
+                    <ul>
+                        <li>each absent Colonel's Man who submitted a destination:
+                            <strong ng-repeat="actor in draw.actors" ng-if="actor.is_human && actor.grosser_available()
+                                        && (actor.id != draw.actor_by_id['hel'].hell_on_earth)">{{actor.name}} </strong>
+                        </li>
+                        <li>all mascots who have chosen destinations at this point:
+                            <strong ng-repeat="actor in draw.actors" ng-if="!actor.is_human && actor.grosser_available()
+                                        && (actor.id != draw.actor_by_id['hel'].hell_on_earth)">{{actor.name}} </strong>
+                        </li>
+                        <li ng-if="phase.actor.is_bummed()">
+                            <strong>three times as many</strong> blank tiles as the total of the above,
+                            to give a <strong>one in four</strong> chance that a destination will be pulled out
+                        </li>
+                        <li ng-if="phase.actor.is_helped()">
+                            <strong>as many</strong> blank tiles as the total of the above,
+                            to give a <strong>one in two</strong> chance that a destination will be pulled out
+                        </li>
+                        <li ng-if="!phase.actor.is_bummed() && !phase.actor.is_helped()">
+                            <strong>twice as many</strong> blank tiles as the total of the above,
+                            to give a <strong>one in three</strong> chance that a destination will be pulled out
+                        </li>
+                    </ul>
+                    <p>If a man or mascot is pulled out, their destination is duplicated as Grosser Vass's choice. </p>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <p>
+                        <select ng-model="phase.actor.grosseree"
+                                ng-options="actor.id as actor.name for actor in draw.get_grosser_available_actors()">
+                            <option value="">Nobody</option>
+                        </select> was made grosser
+                    </p>
+                    <p ng-if="phase.actor.get_destination()">
+                        Grosser Vass's choice is <strong>{{phase.actor.get_destination()}}</strong>
+                    </p>
+                </div>
+                </div>
+            </div>
+            <div ng-if="phase.id == 'BARNEY'">
+                <h2>Barney's diplomatic immunity</h2>
+                <div ng-if="phase.actor.id == draw.actor_by_id['hel'].hell_on_earth">
+                    <p><strong>This will not happen because Hel unleashed &lsquo;Hell on Earth&rsquo; on Barney.</strong></p>
+                </div>
+                <div ng-if="phase.actor.id != draw.actor_by_id['hel'].hell_on_earth">
+                <div ng-if="phase.status == 'ready'">
+                    <p>Prepare a hat containing:</p>
+                    <ul>
+                        <li>each attendee:
+                            <strong ng-repeat="actor in draw.get_attendees()">{{actor.name}} </strong>
+                        </li>
+                        <li ng-if="phase.actor.is_bummed()">
+                            <strong>three times as many</strong> blank tiles as the total of the above,
+                            to give a <strong>one in four</strong> chance that an attendee will be pulled out
+                        </li>
+                        <li ng-if="phase.actor.is_helped()">
+                            <strong>as many</strong> blank tiles as the total of the above,
+                            to give a <strong>one in two</strong> chance that an attendee will be pulled out
+                        </li>
+                        <li ng-if="!phase.actor.is_bummed() && !phase.actor.is_helped()">
+                            <strong>twice as many</strong> blank tiles as the total of the above,
+                            to give a <strong>one in three</strong> chance that an attendee will be pulled out
+                        </li>
+                    </ul>
+                    <p>If a man is pulled out, they are given <i lang="en-za">DIPLOMATIC IMMUNITY</i>.</p>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <p>
+                        <select ng-model="phase.actor.diplomat"
+                                ng-options="actor.id as actor.name for actor in draw.get_attendees()">
+                            <option value="">Nobody</option>
+                        </select> has <i lang="en-za">DIPLOMATIC IMMUNITY</i>.
+                    </p>
+                </div>
+                </div>
+            </div>
+            <div ng-if="phase.id == ''">
+                <h2></h2>
+                <div ng-if="phase.status == 'ready'">
+                </div>
+            </div>
+            <div ng-if="phase.id == ''">
+                <h2></h2>
+                <div ng-if="phase.status == 'ready'">
+                </div>
+            </div>
+            <div ng-if="phase.id == ''">
+                <h2></h2>
+                <div ng-if="phase.status == 'ready'">
+                </div>
+            </div>
+            <div ng-if="phase.id == ''">
+                <h2></h2>
+                <div ng-if="phase.status == 'ready'">
+                </div>
+            </div>
+            <div ng-if="phase.id == ''">
+                <h2></h2>
+                <div ng-if="phase.status == 'ready'">
+                </div>
+            </div>
+            <div ng-if="phase.id == ''">
+                <h2></h2>
+                <div ng-if="phase.status == 'ready'">
+                </div>
+            </div>
+            <div ng-if="phase.id == 'GLOGG'">
+                <h2>Gløgg bums the mascots</h2>
+                <div ng-if="phase.status == 'ready'">
+                    <p>
+                        TODO
+                    </p>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <p>
+                        <select ng-model="phase.actor.mascot"
+                                ng-options="actor.id as actor.name for actor in draw.bummable_actors"
+                                required>
+                            <option value="">REQUIRED</option>
+                        </select> was
+                        <select ng-model="phase.actor.action">
+                            <option value="">unaffected</option>
+                            <option value="bum">bummed</option>
+                            <option value="help">helped</option>
+                        </select>
+                    </p>
+                    <div ng-if="phase.actor.mascot == 'bourne' && phase.actor.action == 'help'">
+                        <p>
+                            <strong>Gløgg chooses an identity for P.C. Bourne:</strong>
+                            <select ng-model="phase.actor.destination"
+                                    ng-options="obj.destination as obj.actor.name for obj in draw.get_destinators(['glogg'])">
+                            </select>
+                        </p>
+                    </div>
+                    <p ng-if="phase.actor.get_original_destination()">
+                        Gløgg's choice is <strong>{{phase.actor.get_original_destination()}}</strong>
+                    </p>
+
+                    <div ng-if="phase.actor.mascot == 'hel' && phase.actor.action == 'help'">
+                        <p>
+                            <strong>Woe! Gløgg chooses a man or mascot for Hel to unleash "Hell on Earth" onto:</strong>
+                            <select ng-model="draw.actor_by_id['hel'].hell_on_earth"
+                                    ng-options="victim.id as victim.name for victim in draw.get_hell_on_earth()">
+                            </select>
+                        </p>
+                        <p ng-if="draw.actor_by_id['hel'].hell_on_earth == 'bourne' &&
+                                  draw.actor_by_id['hel'].in_hell == draw.actor_by_id['bourne'].destination">
+                            <strong>Woe upon woe! {{draw.actor_by_id['hel'].in_hell}} is sent to the tenth circle of hell
+                            and may never be chosen as a destination ever again</strong> except on the mentalist list.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div ng-if="phase.id == 'MASC_ASS'">
+                <h2>Assign delegates</h2>
+                <div ng-if="phase.status == 'ready'">
+                    <p>
+                        Each member of the Regiment who is not present,
+                        and each mascot with a role to play in the draw,
+                        is assigned one of the attendees as a delegate.</p>
+                    <p>
+                        Reardon's delegate is the winner of Reardon's pool tournament, if present.
+                    </p>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <table>
+                        <tr>
+                            <td>
+                                Reardon was delegated to
+                            </td>
+                            <td>
+                                <select ng-model="draw.actor_by_id['reardon'].delegate"
+                                        ng-options="attendee.id as attendee.name for attendee in draw.get_attendees()">
+                                </select>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div ng-if="phase.status == 'ready'">
+                    <p>
+                        Thorsten's delegate is the winner of the rehearsal draw at the previous break, if present.
+                    </p>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <table>
+                        <tr>
+                            <td>
+                                Thorsten was delegated to
+                            </td>
+                            <td>
+                                <select ng-model="draw.actor_by_id['thorsten'].delegate">
+                                    <option ng-repeat="delegate_option in draw.actors" ng-if="delegate_option.is_attendee"
+                                            value="{{delegate_option.id}}">{{delegate_option.name}}</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div ng-if="phase.status == 'ready'">
+                    <p>
+                        Assign the remaining men and mascots randomly.
+                    </p>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <table>
+                        <tr ng-repeat="actor in draw.actors" ng-if="actor.needs_delegate && !actor.is_attendee && actor.random_delegate">
+                            <td>
+                                {{actor.name}} was delegated to
+                            </td>
+                            <td>
+                                <select ng-model="actor.delegate">
+                                    <option ng-repeat="delegate_option in draw.actors" ng-if="delegate_option.is_attendee"
+                                            value="{{delegate_option.id}}">{{delegate_option.name}}</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div ng-if="phase.id == 'REVEAL'">
+                <h2>Reveal destinations</h2>
+                <div ng-if="phase.status == 'ready'">
+                    Each member of the Regiment, or their delegate, reveals their destination.
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <table>
+                        <tr ng-repeat="actor in draw.actors" ng-if="actor.is_human">
+                            <td>
+                                {{actor.name}} chose
+                            </td>
+                            <td>
+                                <input ng-model="actor.destination"></input>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div ng-if="phase.id == 'DIPL_BAG'">
+                <h2>Prepare the diplomatic bag</h2>
+                <div ng-if="phase.status == 'ready'" ng-switch="draw.actor_by_id['barney'].diplomat">
+                    <p ng-switch-when=""><strong>This will not happen because nobody has <i leng="en-za">DIPLOMATIC IMMUNITY</i>.</strong></p>
+                    <div ng-switch-default>
+                        <div ng-switch="draw.actor_by_id[draw.actor_by_id['barney'].diplomat].get_destination()">
+                            <p ng-switch-when=""><strong>
+                                This will not happen because {{draw.actor_by_id[draw.actor_by_id['barney'].diplomat].name}}
+                                did not make it to the draw.</strong>
+                            </p>
+                            <p ng-switch-default>
+                                Fill a bag with
+                                the <i>IT'S JUST BEEN REVOKED</i> tile and
+                                {{draw.get_destinations().length - 4}}
+                                blank tiles, and give it to
+                                <strong>{{draw.actor_by_id[draw.actor_by_id['barney'].diplomat].name}}</strong>
+                            </p>
+                        </div>
+                    </div>                    
+                </div>
+            </div>
+            <div ng-if="phase.id == 'REH_DRAW'">
+                <h2>Rehearsal draw</h2>
+                <div ng-if="phase.status == 'ready'">
+                    <p>Attendees draw the selected destinations in order, but it is just a bit of fun.</p>
+                    <ul>
+                        <li ng-repeat="actor in draw.actors"
+                            ng-if="actor.id != draw.actor_by_id['barney'].diplomat && actor.get_destination()">
+                            {{actor.get_destination()}} ({{actor.name}})
+                        </li>
+                    </ul>
+                    <p ng-if="draw.actor_by_id['barney'].diplomat
+                              && draw.actor_by_id[draw.actor_by_id['barney'].diplomat].get_destination()">
+                        Before each destination is drawn,
+                        <strong>{{draw.actor_by_id[draw.actor_by_id['barney'].diplomat].name}}</strong>
+                        draws a tile from the diplomatic bag,
+                        until he draws the <i>IT'S JUST BEEN REVOKED</i> tile.
+                        When this happens, add his destination
+                        <strong>{{draw.actor_by_id[draw.actor_by_id['barney'].diplomat].destination}}</strong>
+                        to the draw.
+                    </p>
+                    <p>After the draw:</p>
+                    <ul>
+                        <li>The owner of the second-place destination does a Barthez.</li>
+                        <li>The owner of the second-place destination does a Hilfenhaus.</li>
+                        <li>The owner of the winning destination does a Shearer.</li>
+                    </ul>
+                    <p>Return the diplomatic bag to its original state.</p>
+                    <p>The winner of the rehearsal draw becomes Thorsten's delegate. They will get Thorsten's bonus veto next break.</p>
+                </div>
+            </div>
+            <div ng-if="phase.id == 'THE_DRAW'">
+                <h2>The draw</h2>
+                <div ng-if="phase.status == 'ready'">
+                    <p>Attendees draw the selected destinations in order to determine the destination of the next break.</p>
+                    <ul>
+                        <li>The owner of the second-place destination does a Barthez.</li>
+                        <li>The owner of the second-place destination does a Hilfenhaus.</li>
+                        <li>The owner of the winning destination does a Shearer.</li>
+                    </ul>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <ul>
+                        <li ng-repeat="actor in draw.actors" ng-if="actor.get_destination()">
+                            {{actor.get_destination()}} ({{actor.name}})
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div ng-if="phase.id == 'ERIC'">
+                <h2>Eric's &lsquo;You...&rsquo; draw</h2>
+                <div ng-if="phase.actor.id == draw.actor_by_id['hel'].hell_on_earth">
+                    <p><strong>This will not happen because Hel unleashed &lsquo;Hell on Earth&rsquo; on Eric.</strong></p>
+                </div>
+                <div ng-if="phase.actor.id != draw.actor_by_id['hel'].hell_on_earth">
+                <div ng-switch="phase.actor.is_bummed()">
+                    <div ng-switch-when="true">
+                        <p><strong>This will not happen because Eric has been bummed by Gløgg.</strong></p>
+                    </div>
+                    <div ng-if="phase.status == 'ready'" ng-switch-default>
+                        <p>Any attendee may shout &lsquo;You...&rsquo; if they are unhappy with the result of the draw.</p>
+                        <p ng-switch="phase.actor.is_helped()">
+                           If
+                                <strong ng-switch-when="true">at least 3 attendees</strong>
+                                <strong ng-switch-default>all attendees</strong>
+                           agree to do so, they draw the selected destinations again.
+                        </p>
+                        <ul>
+                            <li>The owner of the second-place destination does a Barthez.</li>
+                            <li>The owner of the second-place destination does a Hilfenhaus.</li>
+                            <li>The owner of the winning destination does a Shearer.</li>
+                        </ul>
+                    </div>
+                </div>
+                </div>
+            </div>
+            <div ng-if="phase.id == 'M_TAYLOR'">
+                <h2>The miracle of Marco Taylor</h2>
+                <div ng-if="phase.status == 'ready'">
+                    <p>
+                        If there is still general disgruntlement about the chosen destination, the Miracle of Marco Taylor may occur. 
+                        This is done by the symbolic act of combining the body of Marco Taylor (initially a pebble)
+                        with the blood of Marco Taylor (initially some port.)
+                        In this event, the Colonel's men are transformed into adults
+                        and have a reasonable discussion about where they would like the next destination to be.
+                    </p>
+                    <p>
+                        The result of this discussion will be the real destination.
+                    </p>
+                    <p ng-if="phase.actor.id == draw.actor_by_id['hel'].hell_on_earth">
+                        Marco Taylor is immune to "Hell on Earth" because during the time of Hel 2006's fury,
+                        there is only a pebble and some port.
+                    </p>
+                </div>
+            </div>
+            <div ng-if="phase.id == 'MEDALS'">
+                <h2>Award medals</h2>
+                <div ng-if="phase.status == 'ready'">
+                    <p>
+                        A medal is awarded to any attendee who is in the destination country for the second time.
+                        If they have been in this country for more than 2 times, a bar or decoration is awarded.
+                    </p>
+                </div>
+            </div>
+            <p>
+                <button ng-show="phase.status == 'ready'" ng-click="draw.mark_done(phase)">Done</button>
+            </p>
+        </div>
+    </div>
+    <div class="report">
+        <div ng-repeat="phase in draw.phases" ng-if="phase.status == 'done'">
+            <div ng-if="phase.id == 'FINAL_NT'">
+                <p>Present:
+                    <strong ng-repeat="actor in draw.actors" ng-if="actor.is_attendee">
+                        {{actor.name}}
+                    </strong>
+                </p>
+            </div>
+            <div ng-if="phase.id == 'REVEAL'">
+                <p ng-repeat="actor in draw.actors" ng-if="actor.is_human">
+                    {{actor.name}} revealed <strong>{{actor.destination}}</strong>.
+                    <span ng-if="actor.is_vetoed()">
+                        Kurt vetoed his destination.
+                    </span>
+                </p>
+            </div>
+            <div ng-if="phase.id == 'LLL'">
+                <p>Seamus chose <strong>{{phase.actor.destination}}</strong>.
+                   <span ng-show="phase.actor.is_bummed()">
+                        He was bummed by Gløgg, losing his destination.
+                    </span>
+                    <span ng-if="phase.actor.is_vetoed()">
+                        Kurt vetoed his destination.
+                    </span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
