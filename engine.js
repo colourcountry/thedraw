@@ -369,6 +369,13 @@
                         }
                     }),
             new Actor(draw,
+                    {   id:                 'dole',
+                        name:               'La Dôle',
+                        trappee:            '',
+                        is_bummable:        true,
+                        is_hellable:        true,
+                    }),
+            new Actor(draw,
                     {   id:                 'thorsten',
                         name:               'Thorsten',
                         needs_delegate:     true
@@ -474,6 +481,12 @@
                 }),
 
             new Phase(draw,
+                {   id:             "TRAP_COW",
+                    depends:        [],
+                    actor:          draw.actor_by_id['dole']
+                }),
+
+            new Phase(draw,
                 {   id:             "KURT",
                     depends:        ["REVEAL","MASC_ASS","LLL","GLOGG", "BARNEY", "APPLY_PG"],
                     actor:          draw.actor_by_id['kurt']
@@ -495,8 +508,12 @@
                     depends:        ["BARNEY"]
                 }),
             new Phase(draw,
+                {   id:             "COW_BAG",
+                    depends:        ["TRAP_COW"]
+                }),
+            new Phase(draw,
                 {   id:             "REH_DRAW",
-                    depends:        ["REVEAL","LLL","KURT","SHAFT"]
+                    depends:        ["REVEAL","LLL","KURT","SHAFT","DIPL_BAG","TRAP_COW"]
                 }),
 
             new Phase(draw,
@@ -583,6 +600,16 @@
             return result;
         }
 
+        this.get_absentees = function() {
+            result = [];
+            for (var i=0; i<this.actors.length; i++) {
+                if (this.actors[i].is_human && !this.actors[i].is_attendee) {
+                    result.push(this.actors[i]);
+                }
+            }
+            return result;
+        }
+
         this.get_hell_on_earth = function() {
             result = [];
             for (var i=0; i<this.actors.length; i++) {
@@ -637,6 +664,9 @@
         /* Actions */
 
         this.mark_done = function(phase_done) {
+            if (this.phase_by_id[phase_done].status == 'done') {
+                return; /* already done */
+            }
             for (var i=0; i<this.phases.length; i++) {
                 if (this.phases[i].id == phase_done.id) {
                     this.phases[i].status = 'done';

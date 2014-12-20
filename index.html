@@ -419,6 +419,43 @@ takes possession of Pete Gibbon's envelope, if available.</p>
                 </div>
                 </div>
             </div>
+            <div ng-if="phase.id == 'TRAP_COW'">
+                <h2>Trapped under a cow</h2>
+                <div ng-if="phase.actor.id == draw.actor_by_id['hel'].hell_on_earth">
+                    <p><strong>This will not happen because Hel unleashed &lsquo;Hell on Earth&rsquo; on La Dôle.</strong></p>
+                </div>
+                <div ng-if="phase.actor.id != draw.actor_by_id['hel'].hell_on_earth">
+                <div ng-if="phase.status == 'ready'">
+                    <p>Prepare a hat containing:</p>
+                    <ul>
+                        <li>each absentee:
+                            <strong ng-repeat="actor in draw.get_absentees()">{{actor.name}} </strong>
+                        </li>
+                        <li ng-if="phase.actor.is_bummed()">
+                            <strong>three times as many</strong> blank tiles as the total of the above,
+                            to give a <strong>one in four</strong> chance that an attendee will be pulled out
+                        </li>
+                        <li ng-if="phase.actor.is_helped()">
+                            <strong>as many</strong> blank tiles as the total of the above,
+                            to give a <strong>one in two</strong> chance that an attendee will be pulled out
+                        </li>
+                        <li ng-if="!phase.actor.is_bummed() && !phase.actor.is_helped()">
+                            <strong>twice as many</strong> blank tiles as the total of the above,
+                            to give a <strong>one in three</strong> chance that an attendee will be pulled out
+                        </li>
+                    </ul>
+                    <p>If a man is pulled out, they are trapped under a cow (trapped under La Dôle, a cow.)</p>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <p>
+                        <select ng-model="phase.actor.trappee"
+                                ng-options="actor.id as actor.name for actor in draw.get_absentees()">
+                            <option value="">Nobody</option>
+                        </select> is trapped under a cow.
+                    </p>
+                </div>
+                </div>
+            </div>
             <div ng-if="phase.id == ''">
                 <h2></h2>
                 <div ng-if="phase.status == 'ready'">
@@ -579,9 +616,29 @@ takes possession of Pete Gibbon's envelope, if available.</p>
                             <p ng-switch-default>
                                 Fill a bag with
                                 the <i>IT'S JUST BEEN REVOKED</i> tile and
-                                {{draw.get_destinations().length - 4}}
+                                <strong>{{draw.get_destinations().length - 4}}</strong>
                                 blank tiles, and give it to
                                 <strong>{{draw.actor_by_id[draw.actor_by_id['barney'].diplomat].name}}</strong>
+                            </p>
+                        </div>
+                    </div>                    
+                </div>
+            </div>
+            <div ng-if="phase.id == 'COW_BAG'">
+                <h2>Prepare the cow's bag</h2>
+                <div ng-if="phase.status == 'ready'" ng-switch="draw.actor_by_id['dole'].trappee">
+                    <p ng-switch-when=""><strong>This will not happen because nobody was trapped under a cow.</strong></p>
+                    <div ng-switch-default>
+                        <div ng-switch="draw.actor_by_id[draw.actor_by_id['dole'].trappee].get_destination()">
+                            <p ng-switch-when=""><strong>
+                                This will not happen because {{draw.actor_by_id[draw.actor_by_id['dole'].trappee].name}}
+                                did not make it to the draw.</strong>
+                            </p>
+                            <p ng-switch-default>
+                                Fill a bag with
+                                the <i>GET THE COW OFF THE BOAT</i> tile and <strong>2</strong>
+                                blank tiles, and give it to
+                                <strong>{{draw.actor_by_id[draw.actor_by_id['dole'].trappee].name}}</strong>
                             </p>
                         </div>
                     </div>                    
@@ -593,7 +650,9 @@ takes possession of Pete Gibbon's envelope, if available.</p>
                     <p>Attendees draw the selected destinations in order, but it is just a bit of fun.</p>
                     <ul>
                         <li ng-repeat="actor in draw.actors"
-                            ng-if="actor.id != draw.actor_by_id['barney'].diplomat && actor.get_destination()">
+                            ng-if="actor.id != draw.actor_by_id['barney'].diplomat &&
+                                   actor.id != draw.actor_by_id['dole'].trappee &&
+                                   actor.get_destination()">
                             {{actor.get_destination()}} ({{actor.name}})
                         </li>
                     </ul>
@@ -607,13 +666,29 @@ takes possession of Pete Gibbon's envelope, if available.</p>
                         <strong>{{draw.actor_by_id[draw.actor_by_id['barney'].diplomat].destination}}</strong>
                         to the draw.
                     </p>
+                    <p ng-if="draw.actor_by_id['dole'].trappee
+                              && draw.actor_by_id[draw.actor_by_id['dole'].trappee].get_destination()">
+                        Before each destination is drawn,
+                        <strong>{{draw.actor_by_id[draw.actor_by_id['dole'].trappee].name}}</strong>
+                        draws a tile from the cow's bag,
+                        until he draws the <i>GET THE COW OFF THE BOAT</i> tile.
+                        When this happens, add his destination
+                        <strong>{{draw.actor_by_id[draw.actor_by_id['dole'].trappee].destination}}</strong>
+                        to the draw.
+                        If the cow is still on the boat and only 4 destinations remain,
+                        <strong>{{draw.actor_by_id[draw.actor_by_id['dole'].trappee].name}}</strong>
+                        must <i>CALL CLIFF THORBURN</i> and retire from the draw without entering his destination.
+                        If more than 4 destinations remain,
+                        return the drawn tile and one extra blank tile to the cow's bag.
+                    </p>
                     <p>After the draw:</p>
                     <ul>
                         <li>The owner of the second-place destination does a Barthez.</li>
                         <li>The owner of the second-place destination does a Hilfenhaus.</li>
                         <li>The owner of the winning destination does a Shearer.</li>
                     </ul>
-                    <p>Return the diplomatic bag to its original state.</p>
+                    <p ng-if="draw.actor_by_id['barney'].diplomat">Return the diplomatic bag to its original state.</p>
+                    <p ng-if="draw.actor_by_id['dole'].trappee">Return the cow's bag to its original state.</p>
                     <p>The winner of the rehearsal draw becomes Thorsten's delegate. They will get Thorsten's bonus veto next break.</p>
                 </div>
             </div>
@@ -629,7 +704,10 @@ takes possession of Pete Gibbon's envelope, if available.</p>
                 </div>
                 <div ng-if="phase.status == 'ready' || phase.status == 'done'">
                     <ul>
-                        <li ng-repeat="actor in draw.actors" ng-if="actor.get_destination()">
+                        <li ng-repeat="actor in draw.actors"
+                            ng-if="actor.id != draw.actor_by_id['barney'].diplomat &&
+                                   actor.id != draw.actor_by_id['dole'].trappee &&
+                                   actor.get_destination()">
                             {{actor.get_destination()}} ({{actor.name}})
                         </li>
                     </ul>
