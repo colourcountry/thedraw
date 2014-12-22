@@ -274,7 +274,7 @@
             new Actor(draw,
                     {   id:                 'reardon',
                         name:               'Reardon',
-                        winner:           (TEST && 'RW' ) || '',
+                        winner:             (TEST && 'RW' ) || '',
                         destination:        (TEST && 'Barcelona') || '',
                         runner_up:          (TEST && 'MT' ) || '',
                         helpimede:          (TEST && 'Vienna') || '',
@@ -285,6 +285,22 @@
                         is_hellable:        true,
                         needs_delegate:true,
                         /* FIXME: I have assumed glogg can bum reardon despite the wiki */
+                        get_destination:    function() {
+                            return (!this.is_bummed() && !this.is_vetoed() && !this.is_shafted() && this.get_original_destination()) || '';
+                        },
+                    }),
+            new Actor(draw,
+                    {   id:                 'louis',
+                        name:               'Louis',
+                        finalists:          [ (TEST && 'DT' ) || '', (TEST && 'DL' ) || ''],
+                        final_judges:       [ (TEST && 'Cheryl' ) || '', (TEST && 'Louis' ) || ''],
+                        final_destinations: [ (TEST && 'Vilnius') || '', (TEST && 'Zadar') || ''],
+                        is_vetoable:        true,
+                        is_bummable:        true,
+                        is_shaftable:       true,
+                        is_grosserable:     true,
+                        is_hellable:        true,
+                        needs_delegate:true,
                         get_destination:    function() {
                             return (!this.is_bummed() && !this.is_vetoed() && !this.is_shafted() && this.get_original_destination()) || '';
                         },
@@ -303,7 +319,7 @@
                             /* Available if he has bummed a mascot out of their destination, or if he has his own destination */
                             if (this.action == 'bum') {
                                 /* TODO: assuming glogg can bum reardon */
-                                return (this.mascot == 'lll' || this.mascot == 'reardon') && 'special-glogg';
+                                return (this.mascot == 'lll' || this.mascot == 'reardon' || this.mascot == 'louis') && 'special-glogg';
                             } else {
                                 return this.get_original_destination() && 'normal';
                             }
@@ -311,6 +327,7 @@
                         get_original_destination: function() {
                             return (this.mascot == 'lll' && this.action == 'help' && draw.actor_by_id[this.mascot].destination) || 
                                    (this.mascot == 'reardon' && this.action == 'help' && draw.actor_by_id[this.mascot].helpimede) ||
+                                   (this.mascot == 'louis' && this.action == 'help' && draw.actor_by_id[this.mascot].helpimede) ||
                                    (this.mascot == 'bourne' && this.action == 'help' && this.destination) ||
                                    (this.mascot == 'hel' && this.action == 'bum' && draw.actor_by_id[this.mascot].in_hell) || '';
                         },
@@ -325,6 +342,12 @@
                         diplomat:           '',
                         is_bummable:        true,
                         is_hellable:        true,
+                    }),
+            new Actor(draw,
+                    {   id:                 'dr_wine',
+                        name:               'Doctor Wine Picard',
+                        pervo:              '',
+                        is_hellable:        true
                     }),
             new Actor(draw,
                     {   id:                 'bourne',
@@ -376,6 +399,16 @@
                         is_hellable:        true,
                     }),
             new Actor(draw,
+                    {   id:                 'shanaman',
+                        name:               'Shanaman'
+                    }),
+            new Actor(draw,
+                    {   id:                 'gozer',
+                        name:               'Gozer',
+                        is_hellable:        true,
+                        needs_delegate:     true,
+                    }),
+            new Actor(draw,
                     {   id:                 'thorsten',
                         name:               'Thorsten',
                         needs_delegate:     true
@@ -406,6 +439,8 @@
     var root_url = "http://www.colourcountry.net/colonel/";
 
     var get_phases =  function(draw){ 
+        /* The order in this list determines the order displayed.
+           It's independent of the dependency tree but should make sense */
         return [
             new Phase(draw,
                 {   id:             "REARDON",
@@ -427,14 +462,25 @@
                 }),
 
             new Phase(draw,
+                {   id:             "SHANAMAN",
+                    actor:          draw.actor_by_id['shanaman']
+                }),
+
+            new Phase(draw,
                 {   id:             "MENTALIST",
                     actor:          draw.actor_by_id['bourne'],
-                    depends:        ["PCB_LIST","PIPARUS"]
+                    depends:        ["PCB_LIST","PIPARUS","SHANAMAN"]
                 }),
 
             new Phase(draw,
                 {   id:             "HEL_2006",
-                    actor:          draw.actor_by_id['hel']
+                    actor:          draw.actor_by_id['hel'],
+                    depends:        ["MENTALIST"]
+                }),
+
+            new Phase(draw,
+                {   id:             "X_FACTOR",
+                    actor:          draw.actor_by_id['louis']
                 }),
 
             new Phase(draw,
@@ -450,6 +496,20 @@
                 }),
             
             new Phase(draw,
+                {   id:             "CONES",
+                }),
+
+            new Phase(draw,
+                {   id:             "DR_WINE",
+                    depends:        ["CONES","X_FACTOR","SCHWEINE"], 
+                    actor:          draw.actor_by_id['dr_wine']
+                }),
+
+            new Phase(draw,
+                {   id:             "TRIBUTE",
+                }),
+
+            new Phase(draw,
                 {   id:             "FINAL_NT",
                 }),
 
@@ -459,7 +519,14 @@
                 }),
 
             new Phase(draw,
-                {   id:             "REVEAL"
+                {   id:             "REVEAL",
+                    depends:        ["FINAL_NT"]
+                }),
+
+            new Phase(draw,
+                {   id:             "LLL",
+                    depends:        ["REVEAL"], 
+                    actor:          draw.actor_by_id['lll']
                 }),
 
             new Phase(draw,
@@ -469,48 +536,51 @@
                 }),
 
             new Phase(draw,
-                {   id:             "LLL",
-                    depends:        ["REVEAL","GLOGG"], /* Glogg can cause Hell on Earth on any other mascot so must come first */
-                    actor:          draw.actor_by_id['lll']
-                }),
-
-            new Phase(draw,
                 {   id:             "BARNEY",
-                    depends:        [],
+                    depends:        ["MASC_ASS"],
                     actor:          draw.actor_by_id['barney']
                 }),
 
             new Phase(draw,
                 {   id:             "TRAP_COW",
-                    depends:        [],
+                    depends:        ["MASC_ASS"],
                     actor:          draw.actor_by_id['dole']
                 }),
 
             new Phase(draw,
+                {   id:             "X_WINNER",
+                    depends:        ["X_FACTOR"], 
+                    actor:          draw.actor_by_id['louis']
+                }),
+
+            new Phase(draw,
                 {   id:             "KURT",
-                    depends:        ["REVEAL","MASC_ASS","LLL","GLOGG", "BARNEY", "APPLY_PG"],
+                    depends:        ["REVEAL","MASC_ASS","LLL","X_WINNER","GLOGG","BARNEY","APPLY_PG"],
                     actor:          draw.actor_by_id['kurt']
                 }),
 
             new Phase(draw,
                 {   id:             "SHAFT",
-                    depends:        ["FINAL_NT","KURT","GLOGG"],
+                    depends:        ["FINAL_NT","MASC_ASS","KURT","GLOGG"],
                     actor:          draw.actor_by_id['shaft']
                 }),
 
             new Phase(draw,
                 {   id:             "GROSSER",
-                    depends:        ["FINAL_NT","SHAFT"],
+                    depends:        ["FINAL_NT","MASC_ASS","SHAFT"],
                     actor:          draw.actor_by_id['grosser']
                 }),
+
             new Phase(draw,
                 {   id:             "DIPL_BAG",
                     depends:        ["BARNEY"]
                 }),
+
             new Phase(draw,
                 {   id:             "COW_BAG",
                     depends:        ["TRAP_COW"]
                 }),
+
             new Phase(draw,
                 {   id:             "REH_DRAW",
                     depends:        ["REVEAL","LLL","KURT","SHAFT","DIPL_BAG","TRAP_COW"]
@@ -540,6 +610,10 @@
     ]};
 
     engine.controller("DrawController", function() {
+        this.destination = '';
+        this.eric_destination = '';
+        this.real_destination = '';
+
         this.actors = get_actors(this);
         this.actor_by_id = {};
         this.human_actors = [];
@@ -565,6 +639,8 @@
             }
             this.phase_by_id[this.phases[i].id] = this.phases[i];
         }
+
+        console.log(Object.keys(this.phase_by_id));
 
         /* Dynamic list sources */
 
@@ -664,7 +740,7 @@
         /* Actions */
 
         this.mark_done = function(phase_done) {
-            if (this.phase_by_id[phase_done].status == 'done') {
+            if (phase_done.status == 'done') {
                 return; /* already done */
             }
             for (var i=0; i<this.phases.length; i++) {

@@ -58,19 +58,39 @@ div.phase       {   background-color: #555;
                     padding: 0;
                 }
 
-div.phase.ready {   background-color: #080;
+div.phase.ready {   background-color: #059;
                     border: 0.3em solid black;
                 }
+
+div.phase.done  {   background-color: #252;
+                }
+
     </style>
 </head>
 <body ng-controller="DrawController as draw">
-    <h1>The draw</h1>
+    <h1>
+        <span ng-if="!draw.destination">
+            The draw
+        </span>
+        <span ng-if="!!draw.destination && !draw.eric_destination">
+            It's {{draw.destination}} next time!
+        </span>
+        <span ng-if="!!draw.destination && !!draw.eric_destination && !draw.real_destination">
+            It's <s>{{draw.destination}}</s> {{draw.eric_destination}} next time!
+        </span>
+        <span ng-if="!!draw.destination && !!draw.eric_destination && !!draw.real_destination">
+            It's <s>{{draw.destination}}</s> <s>{{draw.eric_destination}}</s> {{draw.real_destination}} next time!
+        </span>
+    </h1>
     <div class="columns">
         <div ng-repeat="phase in draw.phases" ng-class="['phase',phase.status == 'ready' && 'ready', phase.status == 'done' && 'done']">
             <div ng-if="phase.id == 'REARDON'">
                 <h2>Reardon's tournament</h2>
                 <div ng-if="phase.status == 'ready'">
-                    <p>TODO</p>
+                    <p>
+                        The Regiment play a pool (or snooker) tournament. The winner gets to choose Reardon's destination;
+                        the runner-up gets to select a destination for Gløgg to enter in the event that he helps Reardon.
+                    </p>
                 </div>
                 <div ng-if="phase.status == 'ready' || phase.status == 'done'">
                     <table>
@@ -88,7 +108,7 @@ div.phase.ready {   background-color: #080;
                             <td>
                                 <select ng-model="phase.actor.runner_up"
                                         ng-options="actor.id as actor.name for actor in draw.human_actors">
-                                </select> was runner-up and chose
+                                </select> ran up and chose
                             </td>
                             <td>
                                 <input ng-model="phase.actor.helpimede"></input>
@@ -137,12 +157,28 @@ mentalist list). The destination left in the hat is then added at the bottom of 
                     </p>
                 </div>
             </div>
+            <div ng-if="phase.id == 'SHANAMAN'">
+                <h2>The Shanaman's draw</h2>
+                <div ng-if="phase.status == 'ready'">
+                    <p>Prior to going on the mission, the Shanaman is loaded with a multitude of destinations. On the first night of the 
+break, someone is selected to draw a destination from the Shanaman and reveal it to all present. The Shanaman is then passed to the 
+next person who can decide whether to stick with the current destination or draw again. If they decide to stick, the Shanaman is 
+passed on to the next person; if they draw again, the previous destination is discarded and the new one is revealed. Once two rounds 
+have been completed the last destination to have been revealed is added to PC Bourne's mentalist round.
+                    </p>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <p>The Shanaman yielded
+                       <input ng-model="phase.actor.mentalist"></input>
+                    </p>
+                </div>
+            </div>
             <div ng-if="phase.id == 'MENTALIST'">
                 <h2>Mentalist's choice</h2>
                 <div ng-if="phase.status == 'ready'">
                     <p>An innocent member of the public is coerced to choose a destination from the mentalist list.</p>
                     <ul>
-                        <li ng-repeat="actor in draw.actors" ng-if="actor.get_mentalist()">
+                        <li ng-repeat="actor in draw.actors" ng-if="!!actor.get_mentalist()">
                             {{actor.get_mentalist()}} ({{actor.name}})
                         </li>
                     </ul>
@@ -173,12 +209,58 @@ mentalist list). The destination left in the hat is then added at the bottom of 
                     </p>
                 </div>
             </div>
+            <div ng-if="phase.id == 'X_FACTOR'">
+                <h2>Louis's X-Factor contest</h2>
+                <div ng-if="phase.status == 'ready'">
+                    <p>
+                        The regiment perform a scaled-down re-enactment of TV's the X-Factor,
+                        to fit within a lunchtime slot. Each attendee volunteers a destination,
+                        and the list is then whittled down to 2 candidates.
+                    </p>
+                    <p>
+                        The winner is selected but is not revealed until the final night.
+                    </p>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <p>The finalists were:</p>
+                    <table>
+                        <tr>
+                            <td>
+                                <select ng-model="phase.actor.finalists[0]"
+                                        ng-options="actor.id as actor.name for actor in draw.human_actors">
+                                </select> as
+                                <select ng-model="phase.actor.final_judges[0]"
+                                        ng-options="judge for judge in ['Cheryl','Louis','Simon']">
+                                </select>
+                                with
+                            </td>
+                            <td>
+                                <input ng-model="phase.actor.final_destinations[0]"></input>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <select ng-model="phase.actor.finalists[1]"
+                                        ng-options="actor.id as actor.name for actor in draw.human_actors">
+                                </select> as
+                                <select ng-model="phase.actor.final_judges[1]"
+                                        ng-options="judge for judge in ['Cheryl','Louis','Simon']">
+                                </select>
+                                with
+                            </td>
+                            <td>
+                                <input ng-model="phase.actor.final_destinations[1]" ></input>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
             <div ng-if="phase.id == 'SCHWEINE'">
                 <h2>Schweinerei</h2>
                 <div ng-if="phase.status == 'ready'">
                     <p> Pete Gibbon's Schweinerei tournament usually takes place on the second night of the break, over drinks after 
 the evening meal. It involves, not surprisingly, a game of Schweinerei. The winner of the game becomes Pete Gibbon's delegate and
-takes possession of Pete Gibbon's envelope, if available.</p>
+takes possession of Pete Gibbon's envelope, if available; the player with the highest-scoring single round becomes Gozer's delegate.</p>
                 </div>
                 <div ng-if="phase.status == 'ready' || phase.status == 'done'">
                     <p>
@@ -188,11 +270,76 @@ takes possession of Pete Gibbon's envelope, if available.</p>
                         won Pete Gibbon's Schweinerei tournament.
                     </p>
                 </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <p>
+                        <select ng-model="phase.actor.gozerian"
+                           ng-options="actor.id as actor.name for actor in draw.human_actors">
+                        </select> 
+                        had the highest-scoring single round.
+                    </p>
+                </div>
+            </div>
+            <div ng-if="phase.id == 'DR_WINE'">
+                <h2>Dr. Wine Picard has seen everything</h2>
+                <div ng-if="phase.actor.id == draw.actor_by_id['hel'].hell_on_earth">
+                    <p><strong>This will not happen because Hel unleashed &lsquo;Hell on Earth&rsquo; on Dr. Wine Picard.</strong></p>
+                </div>
+                <div ng-if="phase.actor.id != draw.actor_by_id['hel'].hell_on_earth">
+                <div ng-if="phase.status == 'ready'">
+                    <p>
+                        The first Colonel's man to spot a greater number of cones suitable for use as a tannoy (speaker system) than were so 
+                        employed on the previous break is are awarded Dr. Wine Picard's privilege.
+                    </p>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <p>
+                        <select ng-model="phase.actor.pervo"
+                           ng-options="actor.id as actor.name for actor in draw.human_actors">
+                            <option value="">Nobody</option>
+                        </select> 
+                        has seen everything.
+                    </p>
+                    <p ng-if="phase.status == 'done'">
+                        He's seen it all.
+                    </p>
+                </div>
+                <div ng-if="phase.status == 'ready' && phase.actor.pervo">
+                    <p>
+                        He may peek at the destination in Pete Gibbon's envelope
+                        (if available) and may be told the winner of Louis' X-Factor contest.
+                    </p>
+                    <h2>He's seen it all</h2>
+                </div>
+                </div>
+            </div>
+            <div ng-if="phase.id == 'TRIBUTE'">
+                <h2>&lsquo;Super&rsquo; Hans Christian Grubersen's tribute list</h2>
+                <div ng-if="phase.status == 'ready'">
+                    <p>
+                        The Colonel's regiment reassess the tribute list,
+                        and reassign its members to the mascots.
+                    </p>
+                </div>
+            </div>
+            <div ng-if="phase.id == 'CONES'">
+                <h2>The cones</h2>
+                <div ng-if="phase.status == 'ready'">
+                    <p>
+                        The Colonel's regiment keep an eye out for a selection of
+                        traffic cones suitable for imaginative recreation as a tannoy (speaker system.)
+                        If found, a squad is dispatched to shout &lsquo;Stop telling me what to do!&rsquo; through the cones.
+                    </p>
+                    <p>
+                        They are not trying to steal the traffic cones, although to an innocent bystander, it could, may, look like 
+                        traffic cone theft. And I am an innocent bystander, and you know, to me it looks like traffic cone theft.
+                    </p>
+                </div>
             </div>
             <div ng-if="phase.id == 'FINAL_NT'">
                 <h2>Final night</h2>
                 <div ng-if="phase.status == 'ready' || phase.status == 'done'">
-                    <ul>
+                    <p>The final night meal draw extravaganza was attended by</p>
+                    <ul style="columns: 2; -webkit-columns: 2; -moz-columns: 2">
                         <li ng-repeat="actor in draw.actors" ng-if="actor.is_human">
                             <input type="checkbox" ng-model="actor.is_attendee"></input> {{actor.name}}
                         </li>
@@ -256,12 +403,21 @@ takes possession of Pete Gibbon's envelope, if available.</p>
                         </tr>
                     </table>
                 </div>
-                <div ng-if="draw.actor_by_id['gibbon'].round == phase.actor.id">
-                    <p ng-if="phase.actor.vetoed_destinations().length &gt;= 1 &&
-                              draw.actor_by_id['hel'].hell_on_earth != 'gibbon'">
-                        <strong>{{draw.actor_by_id[draw.actor_by_id['gibbon'].delegate].name}} opens Pete Gibbon's envelope and reveals
-                        Pete Gibbon's choice:</strong>
-                        <input ng-model="draw.actor_by_id['gibbon'].destination"></input>
+                <div ng-if="draw.actor_by_id['hel'].hell_on_earth != 'gibbon' &&
+                            draw.actor_by_id['gibbon'].round == 'kurt' &&
+                            draw.actor_by_id['kurt'].vetoed_destinations().length &gt;= 1">
+                    <p>
+                        <strong>{{draw.actor_by_id[draw.actor_by_id['gibbon'].delegate].name}} opens Pete Gibbon's envelope and:
+                        </strong>
+                    </p>
+                    <p ng-hide="draw.actor_by_id['gozer'].destination">Accepts Pete Gibbon's destination <input ng-model="draw.actor_by_id['gibbon'].destination"></input></p>
+                    <p ng-hide="draw.actor_by_id['hel'].hell_on_earth == 'gozer' ||
+                                draw.actor_by_id['gozer'].destination || draw.actor_by_id['gibbon'].destination)"><i>OR</i></p>
+                    <p ng-hide="draw.actor_by_id['hel'].hell_on_earth == 'gozer' ||
+                                draw.actor_by_id['gibbon'].destination">Invokes the Gozerian, in the form of
+                        <strong>{{draw.actor_by_id[draw.actor_by_id['gozer'].delegate].name}}</strong>, who chooses
+                        a destination which has been in the draw 3 or more times:
+                        <input ng-model="draw.actor_by_id['gozer'].destination"></input>
                     </p>
                 </div>
             </div>
@@ -315,12 +471,21 @@ takes possession of Pete Gibbon's envelope, if available.</p>
                         </select>
                         was de-vetoed
                     </p>
-                    <div ng-if="draw.actor_by_id['gibbon'].round == phase.actor.id">
-                        <p ng-if="phase.actor.shaftee && !phase.actor.destination &&
-                                  draw.actor_by_id['hel'].hell_on_earth != 'gibbon'">
-                            <strong>{{draw.actor_by_id[draw.actor_by_id['gibbon'].delegate].name}} opens Pete Gibbon's envelope and reveals
-                            Pete Gibbon's choice:</strong>
-                            <input ng-model="draw.actor_by_id['gibbon'].destination"></input>
+                    <div ng-if="draw.actor_by_id['gibbon'].round == phase.actor.id &&
+                                phase.actor.shaftee && !phase.actor.destination &&
+                                draw.actor_by_id['hel'].hell_on_earth != 'gibbon'">
+                        <p>
+                            <strong>{{draw.actor_by_id[draw.actor_by_id['gibbon'].delegate].name}} opens Pete Gibbon's envelope and:
+                            </strong>
+                        </p>
+                        <p ng-hide="draw.actor_by_id['gozer'].destination">Accepts Pete Gibbon's destination <input ng-model="draw.actor_by_id['gibbon'].destination"></input></p>
+                        <p ng-hide="draw.actor_by_id['hel'].hell_on_earth == 'gozer' ||
+                                    draw.actor_by_id['gozer'].destination || draw.actor_by_id['gibbon'].destination"><i>OR</i></p>
+                        <p ng-hide="draw.actor_by_id['hel'].hell_on_earth == 'gozer' ||
+                                    draw.actor_by_id['gibbon'].destination">Invokes the Gozerian, in the form of
+                            <strong>{{draw.actor_by_id[draw.actor_by_id['gozer'].delegate].name}}</strong>, who chooses
+                            a destination which has been in the draw 3 or more times:
+                            <input ng-model="draw.actor_by_id['gozer'].destination"></input>
                         </p>
                     </div>
                     <p ng-if="phase.actor.get_destination()">
@@ -368,13 +533,22 @@ takes possession of Pete Gibbon's envelope, if available.</p>
                             <option value="">Nobody</option>
                         </select> was made grosser
                     </p>
-                    <div ng-if="draw.actor_by_id['gibbon'].round == phase.actor.id">
-                        <p ng-if="phase.actor.grosseree &&
-                                  draw.actor_by_id['hel'].hell_on_earth != 'gibbon'">
-                            <strong>{{draw.actor_by_id[draw.actor_by_id['gibbon'].delegate].name}} opens Pete Gibbon's envelope and reveals
-                            Pete Gibbon's choice:</strong>
-                            <input ng-model="draw.actor_by_id['gibbon'].destination"></input>
-                        </p>
+                    <div ng-if="draw.actor_by_id['gibbon'].round == phase.actor.id &&
+                                phase.actor.grosseree &&
+                                draw.actor_by_id['hel'].hell_on_earth != 'gibbon'">
+                            <p>
+                                <strong>{{draw.actor_by_id[draw.actor_by_id['gibbon'].delegate].name}} opens Pete Gibbon's envelope and:
+                                </strong>
+                            </p>
+                            <p ng-hide="draw.actor_by_id['gozer'].destination">Accepts Pete Gibbon's destination <input ng-model="draw.actor_by_id['gibbon'].destination"></input></p>
+                            <p ng-hide="draw.actor_by_id['hel'].hell_on_earth == 'gozer' ||
+                                        draw.actor_by_id['gozer'].destination || draw.actor_by_id['gibbon'].destination"><i>OR</i></p>
+                            <p ng-hide="draw.actor_by_id['hel'].hell_on_earth == 'gozer' ||
+                                        draw.actor_by_id['gibbon'].destination">Invokes the Gozerian, in the form of
+                                <strong>{{draw.actor_by_id[draw.actor_by_id['gozer'].delegate].name}}</strong>, who chooses
+                                a destination which has been in the draw 3 or more times:
+                                <input ng-model="draw.actor_by_id['gozer'].destination"></input>
+                            </p>
                     </div>
                     <p ng-if="phase.actor.get_destination()">
                         Grosser Vass's choice is <strong>{{phase.actor.get_destination()}}</strong>
@@ -456,41 +630,18 @@ takes possession of Pete Gibbon's envelope, if available.</p>
                 </div>
                 </div>
             </div>
-            <div ng-if="phase.id == ''">
-                <h2></h2>
-                <div ng-if="phase.status == 'ready'">
-                </div>
-            </div>
-            <div ng-if="phase.id == ''">
-                <h2></h2>
-                <div ng-if="phase.status == 'ready'">
-                </div>
-            </div>
-            <div ng-if="phase.id == ''">
-                <h2></h2>
-                <div ng-if="phase.status == 'ready'">
-                </div>
-            </div>
-            <div ng-if="phase.id == ''">
-                <h2></h2>
-                <div ng-if="phase.status == 'ready'">
-                </div>
-            </div>
-            <div ng-if="phase.id == ''">
-                <h2></h2>
-                <div ng-if="phase.status == 'ready'">
-                </div>
-            </div>
-            <div ng-if="phase.id == ''">
-                <h2></h2>
-                <div ng-if="phase.status == 'ready'">
-                </div>
-            </div>
             <div ng-if="phase.id == 'GLOGG'">
                 <h2>Gløgg bums the mascots</h2>
                 <div ng-if="phase.status == 'ready'">
                     <p>
-                        TODO
+                        A mascot is randomly chosen from this list:
+                    </p>
+                    <ul style="columns: 2; -webkit-columns: 2; -moz-columns: 2">
+                        <li ng-repeat="actor in draw.bummable_actors">{{actor.name}}</li>
+                    </ul>
+                    <p>
+                        Next, it is randomly determined whether Gløgg will help the mascot,
+                        bum them, or leave them be.
                     </p>
                 </div>
                 <div ng-if="phase.status == 'ready' || phase.status == 'done'">
@@ -528,9 +679,61 @@ takes possession of Pete Gibbon's envelope, if available.</p>
                         <p ng-if="draw.actor_by_id['hel'].hell_on_earth == 'bourne' &&
                                   draw.actor_by_id['hel'].in_hell == draw.actor_by_id['bourne'].destination">
                             <strong>Woe upon woe! {{draw.actor_by_id['hel'].in_hell}} is sent to the tenth circle of hell
-                            and may never be chosen as a destination ever again</strong> except on the mentalist list.
+                            and may never be chosen as a destination ever again</strong> 
+                            <small>except on the mentalist list.</small>
                         </p>
                     </div>
+                </div>
+            </div>
+            <div ng-if="phase.id == ''">
+                <h2></h2>
+                <div ng-if="phase.status == 'ready'">
+                </div>
+            </div>
+            <div ng-if="phase.id == ''">
+                <h2></h2>
+                <div ng-if="phase.status == 'ready'">
+                </div>
+            </div>
+            <div ng-if="phase.id == ''">
+                <h2></h2>
+                <div ng-if="phase.status == 'ready'">
+                </div>
+            </div>
+            <div ng-if="phase.id == ''">
+                <h2></h2>
+                <div ng-if="phase.status == 'ready'">
+                </div>
+            </div>
+            <div ng-if="phase.id == ''">
+                <h2></h2>
+                <div ng-if="phase.status == 'ready'">
+                </div>
+            </div>
+            <div ng-if="phase.id == ''">
+                <h2></h2>
+                <div ng-if="phase.status == 'ready'">
+                </div>
+            </div>
+            <div ng-if="phase.id == 'X_WINNER'">
+                <h2>X-Factor winner</h2>
+                <div ng-if="phase.status == 'ready'">
+                    <p>
+                        The winner of the X-Factor contest is revealed.
+                    </p>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <p>
+                        <select ng-model="phase.actor.destination"
+                                ng-options="destination for destination in phase.actor.final_destinations">
+                        </select> won
+                    </p>
+                    <p>
+                        <!-- TODO: make this automatic -->
+                        <select ng-model="phase.actor.helpimede"
+                                ng-options="destination for destination in phase.actor.final_destinations">
+                        </select> was runner-up
+                    </p>
                 </div>
             </div>
             <div ng-if="phase.id == 'MASC_ASS'">
@@ -548,6 +751,12 @@ takes possession of Pete Gibbon's envelope, if available.</p>
                     </p>
                     <p>
                         Pete Gibbon's delegate is <strong>{{draw.actor_by_id[draw.actor_by_id['gibbon'].winner].name}}</strong>, if present.
+                    </p>
+                    <p>
+                        Louis's delegate is <strong>{{draw.actor_by_id[draw.actor_by_id['louis'].winner].name}}</strong>, if present.
+                    </p>
+                    <p>
+                        Gozer's delegate is <strong>{{draw.actor_by_id[draw.actor_by_id['gibbon'].gozerian].name}}</strong>, if present.
                     </p>
                     <p>
                         Assign the remaining men and mascots randomly.
@@ -570,9 +779,15 @@ takes possession of Pete Gibbon's envelope, if available.</p>
                 </div>
             </div>
             <div ng-if="phase.id == 'REVEAL'">
-                <h2>Reveal destinations</h2>
+                <h2>The revealening</h2>
                 <div ng-if="phase.status == 'ready'">
-                    Each member of the Regiment, or their delegate, reveals their destination.
+                    <p>
+                        Each member of the Regiment, or their delegate, reveals their destination.
+                    </p>
+                    <p ng-if="draw.actor_by_id['dr_wine'].pervo">
+                        <strong>{{draw.actor_by_id[draw.actor_by_id['dr_wine'].pervo].name}}</strong>
+                        reveals last, because he has seen it all.
+                    </p>
                 </div>
                 <div ng-if="phase.status == 'ready' || phase.status == 'done'">
                     <table>
@@ -681,26 +896,27 @@ takes possession of Pete Gibbon's envelope, if available.</p>
                         If more than 4 destinations remain,
                         return the drawn tile and one extra blank tile to the cow's bag.
                     </p>
-                    <p>After the draw:</p>
                     <ul>
-                        <li>The owner of the second-place destination does a Barthez.</li>
-                        <li>The owner of the second-place destination does a Hilfenhaus.</li>
+                        <li>The owner of the last-placed destination does a Barthez.</li>
+                        <li>The owner of the second-place destination may do a Hilfenhaus.</li>
                         <li>The owner of the winning destination does a Shearer.</li>
                     </ul>
+                    <p>After the draw:</p>
                     <p ng-if="draw.actor_by_id['barney'].diplomat">Return the diplomatic bag to its original state.</p>
                     <p ng-if="draw.actor_by_id['dole'].trappee">Return the cow's bag to its original state.</p>
-                    <p>The winner of the rehearsal draw becomes Thorsten's delegate. They will get Thorsten's bonus veto next break.</p>
+                    <p>The winner of the rehearsal draw becomes Thorsten's delegate-elect. 
+                       They will get Thorsten's bonus veto next break, if present at the draw.</p>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <p><select ng-model="phase.actor.destination"
+                              ng-options="obj.destination as obj.actor.name for obj in draw.get_destinators(['glogg'])">
+                    </select><strong> is Thorsten's delegate-elect.</strong></p>
                 </div>
             </div>
             <div ng-if="phase.id == 'THE_DRAW'">
                 <h2>The draw</h2>
                 <div ng-if="phase.status == 'ready'">
                     <p>Attendees draw the selected destinations in order to determine the destination of the next break.</p>
-                    <ul>
-                        <li>The owner of the second-place destination does a Barthez.</li>
-                        <li>The owner of the second-place destination does a Hilfenhaus.</li>
-                        <li>The owner of the winning destination does a Shearer.</li>
-                    </ul>
                 </div>
                 <div ng-if="phase.status == 'ready' || phase.status == 'done'">
                     <ul>
@@ -711,6 +927,45 @@ takes possession of Pete Gibbon's envelope, if available.</p>
                             {{actor.get_destination()}} ({{actor.name}})
                         </li>
                     </ul>
+                </div>
+                <div ng-if="phase.status == 'ready'">
+                    <p ng-if="draw.actor_by_id['barney'].diplomat
+                              && draw.actor_by_id[draw.actor_by_id['barney'].diplomat].get_destination()">
+                        Before each destination is drawn,
+                        <strong>{{draw.actor_by_id[draw.actor_by_id['barney'].diplomat].name}}</strong>
+                        draws a tile from the diplomatic bag,
+                        until he draws the <i>IT'S JUST BEEN REVOKED</i> tile.
+                        When this happens, add his destination
+                        <strong>{{draw.actor_by_id[draw.actor_by_id['barney'].diplomat].destination}}</strong>
+                        to the draw.
+                    </p>
+                    <p ng-if="draw.actor_by_id['dole'].trappee
+                              && draw.actor_by_id[draw.actor_by_id['dole'].trappee].get_destination()">
+                        Before each destination is drawn,
+                        <strong>{{draw.actor_by_id[draw.actor_by_id['dole'].trappee].name}}</strong>
+                        draws a tile from the cow's bag,
+                        until he draws the <i>GET THE COW OFF THE BOAT</i> tile.
+                        When this happens, add his destination
+                        <strong>{{draw.actor_by_id[draw.actor_by_id['dole'].trappee].destination}}</strong>
+                        to the draw.
+                        If the cow is still on the boat and only 4 destinations remain,
+                        <strong>{{draw.actor_by_id[draw.actor_by_id['dole'].trappee].name}}</strong>
+                        must <i>CALL CLIFF THORBURN</i> and retire from the draw without entering his destination.
+                        If more than 4 destinations remain,
+                        return the drawn tile and one extra blank tile to the cow's bag.
+                    </p>
+                    <ul>
+                        <li>The owner of the last-placed destination does a Barthez.</li>
+                        <li>The owner of the second-place destination may do a Hilfenhaus.</li>
+                        <li>The owner of the winning destination does a Shearer.</li>
+                    </ul>
+                </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <p><strong>Well, it's
+                       <select ng-model="draw.destination"
+                               ng-options="destination for destination in draw.get_destinations()"></select>
+                       next time!</strong>
+                    </p>
                 </div>
             </div>
             <div ng-if="phase.id == 'ERIC'">
@@ -731,11 +986,13 @@ takes possession of Pete Gibbon's envelope, if available.</p>
                                 <strong ng-switch-default>all attendees</strong>
                            agree to do so, they draw the selected destinations again.
                         </p>
-                        <ul>
-                            <li>The owner of the second-place destination does a Barthez.</li>
-                            <li>The owner of the second-place destination does a Hilfenhaus.</li>
-                            <li>The owner of the winning destination does a Shearer.</li>
-                        </ul>
+                    </div>
+                    <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                        <p><strong>Well, it's
+                           <select ng-model="draw.eric_destination"
+                                   ng-options="destination for destination in draw.get_destinations()"></select>
+                           next time!</strong>
+                        </p>
                     </div>
                 </div>
                 </div>
@@ -758,12 +1015,18 @@ takes possession of Pete Gibbon's envelope, if available.</p>
                         there is only a pebble and some port.
                     </p>
                 </div>
+                <div ng-if="phase.status == 'ready' || phase.status == 'done'">
+                    <p><strong>Well, it's
+                       <input ng-model="draw.real_destination"></input>
+                       next time!</strong>
+                    </p>
+                </div>
             </div>
             <div ng-if="phase.id == 'MEDALS'">
                 <h2>Award medals</h2>
                 <div ng-if="phase.status == 'ready'">
                     <p>
-                        A medal is awarded to any attendee who is in the destination country for the second time.
+                        The Schenkstroop awards a medal to any attendee who is in the destination country for the second time.
                         If they have been in this country for more than 2 times, a bar or decoration is awarded.
                     </p>
                 </div>
@@ -773,7 +1036,7 @@ takes possession of Pete Gibbon's envelope, if available.</p>
             </p>
         </div>
     </div>
-    <div class="report">
+    <div class="report" ng-if="false" ><!-- TODO -->
         <div ng-repeat="phase in draw.phases" ng-if="phase.status == 'done'">
             <div ng-if="phase.id == 'FINAL_NT'">
                 <p>Present:
