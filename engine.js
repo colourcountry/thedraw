@@ -1,6 +1,6 @@
 (function(){
 
-    var TEST = true;
+    var TEST = false;
 
     var Actor = function(draw,obj) {
         this.draw = draw;
@@ -501,7 +501,7 @@
 
             new Phase(draw,
                 {   id:             "DR_WINE",
-                    depends:        ["CONES","X_FACTOR","SCHWEINE"], 
+                    depends:        ["CONES"], 
                     actor:          draw.actor_by_id['dr_wine']
                 }),
 
@@ -583,7 +583,7 @@
 
             new Phase(draw,
                 {   id:             "REH_DRAW",
-                    depends:        ["REVEAL","LLL","KURT","SHAFT","DIPL_BAG","TRAP_COW"]
+                    depends:        ["REVEAL","LLL","KURT","SHAFT","DIPL_BAG","COW_BAG"]
                 }),
 
             new Phase(draw,
